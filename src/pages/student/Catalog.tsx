@@ -3,7 +3,7 @@ import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-error';
 import { Link } from 'react-router-dom';
-import { BookOpen, Tag, ArrowRight } from 'lucide-react';
+import { BookOpen, Tag, ArrowRight, Loader2 } from 'lucide-react';
 
 interface Book {
   id: string;
@@ -20,6 +20,14 @@ export function Catalog() {
   const [activeTab, setActiveTab] = useState<'rakmaya' | 'buku' | 'artikel' | 'sumber-digital'>('rakmaya');
 
   useEffect(() => {
+    // Only fetch books when a tab that needs books is selected
+    // Rak Maya doesn't need to load books from Firestore
+    if (activeTab === 'rakmaya') {
+      if (books.length === 0) setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     const q = query(collection(db, 'books'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, 
       (snapshot) => {
@@ -34,16 +42,7 @@ export function Catalog() {
     );
 
     return () => unsubscribe();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 min-h-[50vh]">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
-        <div className="text-blue-500 font-bold animate-pulse text-xl">Memuatkan katalog... 📚</div>
-      </div>
-    );
-  }
+  }, [activeTab]);
 
   const filteredBooks = books.filter(book => {
     if (activeTab === 'buku') return book.bookType === 'Buku / E-Book' || book.bookType === 'Buku Umum';
@@ -109,6 +108,11 @@ export function Catalog() {
             Akses Rak Maya Penuh
             <ArrowRight className="ml-3 w-6 h-6" />
           </a>
+        </div>
+      ) : loading ? (
+        <div className="flex flex-col items-center justify-center p-12 min-h-[40vh] bg-white rounded-3xl border-2 border-slate-100 shadow-sm">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+          <div className="text-slate-600 font-bold animate-pulse">Memuatkan carian katalog...</div>
         </div>
       ) : (
         <>

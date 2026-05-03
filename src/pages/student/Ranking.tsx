@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { collection, query, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-error';
-import { Trophy, Medal, Crown, Star, Search, Filter } from 'lucide-react';
+import { Trophy, Medal, Crown, Star, Search, Filter, Loader2 } from 'lucide-react';
 
 interface LogData {
   studentName: string;
@@ -36,19 +36,19 @@ export function Ranking() {
     return () => unsubscribe();
   }, []);
 
-  if (loading) return <div className="p-8 text-center text-slate-500 min-h-[50vh] flex items-center justify-center">Memuatkan data ranking...</div>;
-
   const studentCountMap: Record<string, { total: number, className: string, stream: string }> = {};
   const classCountMap: Record<string, number> = {};
 
-  logs.forEach(log => {
-    if (!studentCountMap[log.studentName]) {
-      studentCountMap[log.studentName] = { total: 0, className: log.studentClass, stream: log.studentStream || '' };
-    }
-    studentCountMap[log.studentName].total += 1;
-    const combinedClassName = `${log.studentStream || ''} ${log.studentClass || ''}`.trim() || 'Tiada Kelas';
-    classCountMap[combinedClassName] = (classCountMap[combinedClassName] || 0) + 1;
-  });
+  if (!loading) {
+    logs.forEach(log => {
+      if (!studentCountMap[log.studentName]) {
+        studentCountMap[log.studentName] = { total: 0, className: log.studentClass, stream: log.studentStream || '' };
+      }
+      studentCountMap[log.studentName].total += 1;
+      const combinedClassName = `${log.studentStream || ''} ${log.studentClass || ''}`.trim() || 'Tiada Kelas';
+      classCountMap[combinedClassName] = (classCountMap[combinedClassName] || 0) + 1;
+    });
+  }
 
   let filteredStudents = Object.keys(studentCountMap)
     .map(name => ({
@@ -103,8 +103,15 @@ export function Ranking() {
         </div>
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col gap-4">
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-12 space-y-4">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+          <div className="text-blue-500 font-bold animate-pulse text-lg">Mengira rekod bacaan terkini...</div>
+        </div>
+      ) : (
+        <>
+          {/* Filters & Search */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col gap-4">
         <div className="w-full relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input 
@@ -243,6 +250,8 @@ export function Ranking() {
         </div>
 
       </div>
+      </>
+      )}
     </div>
   );
 }
