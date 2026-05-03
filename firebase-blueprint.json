@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for teachers and students",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher"] },
+        "studentClass": { "type": "string" },
+        "studentStream": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["email", "name", "role", "createdAt", "updatedAt"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "A short reading material",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "bookType": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "uploadedBy": { "type": "string" }
+      },
+      "required": ["title", "content", "category", "createdAt", "updatedAt", "uploadedBy"]
+    },
+    "ReadingLog": {
+      "title": "Reading Log",
+      "description": "Log of a student's reading activity (e-Nilam)",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "studentStream": { "type": "string" },
+        "bookTitle": { "type": "string" },
+        "author": { "type": "string" },
+        "publisher": { "type": "string" },
+        "pages": { "type": "string" },
+        "language": { "type": "string" },
+        "source": { "type": "string" },
+        "summary": { "type": "string" },
+        "lesson": { "type": "string" },
+        "dateRead": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["studentName", "studentClass", "studentStream", "bookTitle", "language", "source", "dateRead", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles."
+    },
+    "/books/{bookId}": {
+      "schema": { "$ref": "#/entities/Book" },
+      "description": "Stores reading materials."
+    },
+    "/logs/{logId}": {
+      "schema": { "$ref": "#/entities/ReadingLog" },
+      "description": "Stores reading logs."
+    }
+  }
+}

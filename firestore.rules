@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    
+    function isTeacher() {
+      return isSignedIn();
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'name', 'role', 'createdAt', 'updatedAt']) &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 256 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 256 &&
+             data.role in ['student', 'teacher'] &&
+             (!data.keys().hasAny(['studentClass']) || data.studentClass is string) &&
+             (!data.keys().hasAny(['studentStream']) || data.studentStream is string) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().updatedAt == request.time && incoming().email == existing().email && incoming().role == existing().role;
+      allow delete: if false;
+    }
+
+    function isValidBook(data) {
+      return data.keys().hasAll(['title', 'content', 'category', 'createdAt', 'updatedAt', 'uploadedBy']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 300 &&
+             (!data.keys().hasAny(['author']) || (data.author is string && data.author.size() <= 200)) &&
+             data.content is string && data.content.size() > 0 && data.content.size() <= 100000 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+             (!data.keys().hasAny(['coverUrl']) || (data.coverUrl is string && data.coverUrl.size() <= 1000)) &&
+             (!data.keys().hasAny(['fileUrl']) || (data.fileUrl is string && data.fileUrl.size() <= 1000000)) &&
+             (!data.keys().hasAny(['bookType']) || (data.bookType is string && data.bookType.size() <= 100)) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp &&
+             data.uploadedBy is string && data.uploadedBy == request.auth.uid;
+    }
+
+    match /books/{bookId} {
+      allow read: if true;
+      allow create: if isTeacher() && isValidId(bookId) && isValidBook(incoming()) && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isTeacher() && isValidId(bookId) && isValidBook(incoming()) && incoming().updatedAt == request.time && incoming().createdAt == existing().createdAt && incoming().uploadedBy == existing().uploadedBy;
+      allow delete: if isTeacher();
+    }
+
+    function isValidReadingLog(data) {
+      return data.keys().hasAll(['studentName', 'studentClass', 'studentStream', 'bookTitle', 'language', 'source', 'dateRead', 'createdAt']) &&
+             data.studentName is string && data.studentName.size() > 0 && data.studentName.size() <= 200 &&
+             data.studentClass is string && data.studentClass.size() > 0 && data.studentClass.size() <= 100 &&
+             data.studentStream is string && data.studentStream.size() > 0 && data.studentStream.size() <= 100 &&
+             data.bookTitle is string && data.bookTitle.size() > 0 && data.bookTitle.size() <= 300 &&
+             data.language is string && data.language.size() > 0 && data.language.size() <= 100 &&
+             data.source is string && data.source.size() > 0 && data.source.size() <= 100 &&
+             (!data.keys().hasAny(['summary']) || (data.summary is string && data.summary.size() <= 5000)) &&
+             (!data.keys().hasAny(['lesson']) || (data.lesson is string && data.lesson.size() <= 5000)) &&
+             (!data.keys().hasAny(['author']) || (data.author is string && data.author.size() <= 500)) &&
+             (!data.keys().hasAny(['publisher']) || (data.publisher is string && data.publisher.size() <= 500)) &&
+             (!data.keys().hasAny(['pages']) || (data.pages is string && data.pages.size() <= 50)) &&
+             data.dateRead is string && data.dateRead.size() <= 50 &&
+             data.createdAt is timestamp;
+    }
+
+    match /logs/{logId} {
+      allow read: if true;
+      allow create: if isValidId(logId) && isValidReadingLog(incoming()) && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isTeacher();
+    }
+  }
+}

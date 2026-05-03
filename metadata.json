@@ -1,0 +1,6 @@
+{
+  "name": "Perpustakaan Digital Pintar",
+  "description": "Aplikasi perpustakaan digital untuk murid membaca buku dan merekod log pembacaan, dan pandangan admin untuk guru melihat analitik serta memuat naik bahan bacaan baru dengan pengkategorian pintar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
