@@ -113,11 +113,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       console.error('Error signing in anonymously', error);
       if (error.code === 'auth/operation-not-allowed') {
-        alert('Ralat Log Masuk: Pengesahan tanpa nama (Anonymous Auth) tidak diaktifkan. \n\nSila minta pihak admin mengaktifkan "Anonymous Sign-in" di Firebase Console > Authentication > Sign-in method.');
+        throw new Error('Pengesahan tanpa nama (Anonymous Auth) tidak diaktifkan. Sila aktifkan di Firebase Console.');
       } else {
-        alert('Gagal log masuk: ' + error.message);
+        throw new Error('Gagal log masuk: ' + error.message);
       }
-      throw error;
     }
   };
 

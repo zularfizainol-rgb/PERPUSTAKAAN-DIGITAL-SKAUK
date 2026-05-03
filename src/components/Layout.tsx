@@ -17,7 +17,7 @@ export function Layout() {
     setPasswordError('');
   };
 
-  const submitPassword = () => {
+  const submitPassword = async () => {
     if (!passwordInput) return;
     
     if (passwordInput !== 'skauk0053') {
@@ -26,13 +26,15 @@ export function Layout() {
     }
     
     setPasswordError('');
-    setShowPasswordPrompt(false);
-    navigate('/admin');
     
-    // Background sign in
-    signInWithPassword(passwordInput).catch((error: any) => {
-       console.error("Background login error", error);
-    });
+    try {
+      await signInWithPassword(passwordInput);
+      setShowPasswordPrompt(false);
+      navigate('/admin');
+    } catch (error: any) {
+      console.error("Login error", error);
+      setPasswordError(error.message || 'Gagal log masuk. Sila periksa sambungan internet.');
+    }
   };
 
   return (
