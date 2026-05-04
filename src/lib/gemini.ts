@@ -1,6 +1,17 @@
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    const key = process.env.GEMINI_API_KEY || import.meta.env?.VITE_GEMINI_API_KEY;
+    if (!key) {
+      console.warn("GEMINI_API_KEY is not defined. AI categorization will not work.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey: key || 'missing_key' });
+  }
+  return aiInstance;
+}
 
 export async function categorizeBookContent(title: string, content: string): Promise<string> {
   const prompt = `Anda adalah seorang pustakawan pakar. Baca tajuk dan kandungan bahan bacaan ringkas di bawah.
@@ -11,7 +22,7 @@ Tajuk: ${title}
 Kandungan: ${content.substring(0, 2000)}...`; // limit to save tokens
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
