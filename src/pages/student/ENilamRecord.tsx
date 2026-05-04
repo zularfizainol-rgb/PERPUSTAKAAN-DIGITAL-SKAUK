@@ -183,18 +183,18 @@ export function ENilamRecord() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Penulis</label>
-                <input type="text" name="author" required value={formData.author} onChange={handleChange} placeholder="Nama Penulis" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
+                <label className="block text-sm font-bold text-slate-700 mb-2">Penulis (Pilihan)</label>
+                <input type="text" name="author" value={formData.author} onChange={handleChange} placeholder="Nama Penulis" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Penerbit</label>
-                <input type="text" name="publisher" required value={formData.publisher} onChange={handleChange} placeholder="Penerbit Buku" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
+                <label className="block text-sm font-bold text-slate-700 mb-2">Penerbit (Pilihan)</label>
+                <input type="text" name="publisher" value={formData.publisher} onChange={handleChange} placeholder="Penerbit Buku" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Bilangan Muka Surat</label>
-              <input type="number" name="pages" required value={formData.pages} onChange={handleChange} placeholder="Contoh: 120" min="1" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
+              <label className="block text-sm font-bold text-slate-700 mb-2">Bilangan Muka Surat (Pilihan)</label>
+              <input type="number" name="pages" value={formData.pages} onChange={handleChange} placeholder="Contoh: 120" min="1" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
             </div>
             
             <div>
@@ -236,11 +236,11 @@ export function ENilamRecord() {
           <h3 className="text-xl font-black text-emerald-600 border-b-2 border-emerald-100 pb-3 mb-5">💡 Rumusan & Pengajaran</h3>
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Rumusan (Pilihan)</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Rumusan</label>
               <textarea name="summary" value={formData.summary} onChange={handleChange} rows={3} placeholder="Sila tulis ringkasan bahan bacaan..." className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Pengajaran (Pilihan)</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Pengajaran</label>
               <textarea name="lesson" value={formData.lesson} onChange={handleChange} rows={2} placeholder="Sila tulis satu nilai murni / pengajaran..." className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
             </div>
           </div>
