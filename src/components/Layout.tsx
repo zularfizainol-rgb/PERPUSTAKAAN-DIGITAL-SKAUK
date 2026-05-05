@@ -43,8 +43,19 @@ export function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20">
             <div className="flex items-center">
-              <div className="bg-white/20 p-2.5 rounded-2xl backdrop-blur-sm mr-4 shadow-inner">
-                <Library className="h-8 w-8 text-white" />
+              <div className="flex items-center gap-2 mr-4 shrink-0">
+                <img 
+                  src="https://i.postimg.cc/x1yzrs3k/IMG-20220901-WA0001(1).jpg" 
+                  alt="Logo SK AU Keramat" 
+                  className="h-12 w-12 object-cover rounded-xl shadow-sm bg-white" 
+                  referrerPolicy="no-referrer" 
+                />
+                <img 
+                  src="https://i.postimg.cc/bYsF95Q0/IMG-20220901-WA0002(1).jpg" 
+                  alt="Logo TS25" 
+                  className="h-12 w-12 object-cover rounded-xl shadow-sm bg-white" 
+                  referrerPolicy="no-referrer" 
+                />
               </div>
               <div>
                 <span className="font-extrabold text-2xl text-white tracking-tight drop-shadow-sm flex items-center">

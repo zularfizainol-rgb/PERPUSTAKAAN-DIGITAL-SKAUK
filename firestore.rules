@@ -73,7 +73,7 @@ service cloud.firestore {
     match /logs/{logId} {
       allow read: if true;
       allow create: if isValidId(logId) && isValidReadingLog(incoming()) && incoming().createdAt == request.time;
-      allow update: if false;
+      allow update: if isTeacher() && isValidReadingLog(incoming()) && incoming().createdAt == existing().createdAt;
       allow delete: if isTeacher();
     }
   }

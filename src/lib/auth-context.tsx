@@ -84,7 +84,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error: any) {
       console.error('Error signing in with Google', error);
-      alert('Gagal log masuk: ' + error.message);
+      let errorMessage = error.message;
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = 'Domain aplikasi ini belum dibenarkan di Firebase. Sila tambah ' + window.location.hostname + ' dalam senarai Authorized Domains di Firebase Console (Authentication > Settings > Authorized domains).';
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = 'Log masuk dibatalkan.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Rangkaian terputus atau disekat oleh pelayar. Jika anda berada dalam paparan iframe (seperti di AI Studio), sila BUKA APLIKASI DI TAB BARU (Open in New Tab) di bahagian atas kanan paparan untuk log masuk.';
+      }
+      alert('Gagal log masuk: ' + errorMessage);
       throw error;
     }
   };
@@ -96,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     try {
       const result = await signInAnonymously(auth);
-      
+
       const userRef = doc(db, 'users', result.user.uid);
       const userSnap = await getDoc(userRef);
       
@@ -111,12 +119,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchProfile(result.user.uid);
       }
     } catch (error: any) {
-      console.error('Error signing in anonymously', error);
+      console.error('Error signing in', error);
       if (error.code === 'auth/operation-not-allowed') {
-        throw new Error('Pengesahan tanpa nama (Anonymous Auth) tidak diaktifkan. Sila aktifkan di Firebase Console.');
-      } else {
-        throw new Error('Gagal log masuk: ' + error.message);
+        throw new Error('Sila pergi ke Firebase Console > Authentication > Sign-in method, dan aktifkan "Anonymous" untuk membenarkan log masuk ini.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+         throw new Error('Domain ini tidak dibenarkan. Sila tambah domain ini di ruang Authorized Domains di Firebase Console.');
+      } else if (error.code === 'auth/network-request-failed') {
+         throw new Error('Rangkaian terputus atau disekat oleh pelayar. Jika anda berada dalam paparan iframe (seperti di AI Studio), sila BUKA APLIKASI DI TAB BARU (Open in New Tab) untuk log masuk.');
       }
+      throw new Error(`Gagal log masuk: ${error.message}`);
     }
   };
 

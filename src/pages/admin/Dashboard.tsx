@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, serverTimestamp, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-error';
-import { Users, BookOpen, Trophy, Sparkles, Star, Medal, Crown, Eye, X, Filter, Download } from 'lucide-react';
+import { Users, BookOpen, Trophy, Sparkles, Star, Medal, Crown, Eye, X, Filter, Download, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -34,6 +34,60 @@ export function AdminDashboard() {
   const [selectedStream, setSelectedStream] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [editingLog, setEditingLog] = useState<LogData | null>(null);
+  const [deleteLogId, setDeleteLogId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  const confirmDeleteLog = async () => {
+    if (!deleteLogId) return;
+    try {
+      await deleteDoc(doc(db, 'logs', deleteLogId));
+      setStatusMessage({ type: 'success', text: 'Rekod berjaya dipadam.' });
+      setDeleteLogId(null);
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch (error) {
+      console.error('Gagal memadam rekod:', error);
+      setStatusMessage({ type: 'error', text: 'Gagal memadam rekod.' });
+      setDeleteLogId(null);
+      setTimeout(() => setStatusMessage(null), 3000);
+      handleFirestoreError(error, OperationType.DELETE, 'logs');
+    }
+  };
+
+  const handleDeleteLog = (id: string) => {
+    setDeleteLogId(id);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingLog) return;
+    
+    try {
+      const logRef = doc(db, 'logs', editingLog.id);
+      await updateDoc(logRef, {
+        studentName: editingLog.studentName,
+        studentClass: editingLog.studentClass,
+        studentStream: editingLog.studentStream,
+        bookTitle: editingLog.bookTitle,
+        dateRead: editingLog.dateRead,
+        author: editingLog.author || '',
+        publisher: editingLog.publisher || '',
+        pages: editingLog.pages || '',
+        language: editingLog.language || '',
+        source: editingLog.source || '',
+        summary: editingLog.summary || '',
+        lesson: editingLog.lesson || ''
+      });
+      setEditingLog(null);
+      setStatusMessage({ type: 'success', text: 'Rekod berjaya dikemaskini.' });
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch (error) {
+      console.error('Gagal mengemaskini rekod:', error);
+      setStatusMessage({ type: 'error', text: 'Gagal mengemaskini rekod.' });
+      setTimeout(() => setStatusMessage(null), 3000);
+      handleFirestoreError(error, OperationType.UPDATE, 'logs');
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -265,6 +319,11 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {statusMessage && (
+        <div className={`px-4 py-3 font-bold text-white rounded-2xl shadow-sm text-center animate-in slide-in-from-top-4 ${statusMessage.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+          {statusMessage.text}
+        </div>
+      )}
       {/* Header Section */}
       <div className="bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 p-8 rounded-3xl shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative overflow-hidden">
         {/* Decorative elements */}
@@ -523,13 +582,29 @@ export function AdminDashboard() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() => setSelectedLog(log)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors inline-flex items-center justify-center border border-transparent hover:border-blue-100"
-                      title="Lihat Maklumat"
-                    >
-                      <Eye className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setSelectedLog(log)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors inline-flex items-center justify-center border border-transparent hover:border-blue-100"
+                        title="Lihat Maklumat"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setEditingLog(log)}
+                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-xl transition-colors inline-flex items-center justify-center border border-transparent hover:border-amber-100"
+                        title="Edit Maklumat"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLog(log.id)}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors inline-flex items-center justify-center border border-transparent hover:border-rose-100"
+                        title="Padam Rekod"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -543,9 +618,9 @@ export function AdminDashboard() {
 
       {/* Modal Maklumat Bacaan */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 sm:pb-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl max-w-md w-full flex flex-col max-h-[75vh]">
+            <div className="flex justify-between items-center p-5 border-b border-slate-100 shrink-0">
               <h3 className="text-xl font-bold text-slate-900 flex items-center">
                 <BookOpen className="w-5 h-5 mr-2 text-indigo-600" />
                 Maklumat Bacaan
@@ -558,7 +633,7 @@ export function AdminDashboard() {
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto space-y-6">
+            <div className="p-5 overflow-y-auto space-y-5">
               <div>
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Murid</p>
                 <p className="text-lg font-bold text-slate-800">{selectedLog.studentName}</p>
@@ -590,6 +665,196 @@ export function AdminDashboard() {
                 <p className="text-sm font-bold text-blue-700 uppercase tracking-wider mb-2">Pengajaran / Nilai Murni</p>
                 <p className="text-slate-700 font-medium whitespace-pre-wrap">{selectedLog.lesson || 'Tiada pengajaran dicatat.'}</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Rekod */}
+      {editingLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 sm:pb-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl max-w-xl w-full flex flex-col max-h-[75vh]">
+            <div className="flex justify-between items-center p-5 border-b border-slate-100 flex-shrink-0 bg-white rounded-t-3xl z-10">
+              <h3 className="text-xl font-bold text-slate-900 flex items-center">
+                <Edit className="w-5 h-5 mr-2 text-amber-600" />
+                Kemaskini Rekod
+              </h3>
+              <button
+                onClick={() => setEditingLog(null)}
+                className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
+              <div className="p-5 overflow-y-auto space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Nama Murid</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={editingLog.studentName} 
+                      onChange={e => setEditingLog({...editingLog, studentName: e.target.value})}
+                      className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Kelas</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={editingLog.studentClass} 
+                      onChange={e => setEditingLog({...editingLog, studentClass: e.target.value})}
+                      className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Aliran / Tahun</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={editingLog.studentStream} 
+                      onChange={e => setEditingLog({...editingLog, studentStream: e.target.value})}
+                      className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Tarikh Bacaan</label>
+                    <input 
+                      type="date" 
+                      required
+                      value={editingLog.dateRead || ''} 
+                      onChange={e => setEditingLog({...editingLog, dateRead: e.target.value})}
+                      className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100">
+                  <h4 className="font-bold text-slate-800 mb-3">Maklumat Bahan Bacaan</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Tajuk Buku / Bahan Bacaan</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={editingLog.bookTitle || ''} 
+                        onChange={e => setEditingLog({...editingLog, bookTitle: e.target.value})}
+                        className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Penulis</label>
+                      <input 
+                        type="text" 
+                        value={editingLog.author || ''} 
+                        onChange={e => setEditingLog({...editingLog, author: e.target.value})}
+                        className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Penerbit</label>
+                      <input 
+                        type="text" 
+                        value={editingLog.publisher || ''} 
+                        onChange={e => setEditingLog({...editingLog, publisher: e.target.value})}
+                        className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Bilangan Muka Surat</label>
+                      <input 
+                        type="number" 
+                        value={editingLog.pages || ''} 
+                        onChange={e => setEditingLog({...editingLog, pages: e.target.value})}
+                        className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Bahasa</label>
+                      <select 
+                        value={editingLog.language || ''} 
+                        onChange={e => setEditingLog({...editingLog, language: e.target.value})}
+                        className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none bg-white"
+                      >
+                        <option value="Bahasa Melayu">Bahasa Melayu</option>
+                        <option value="Bahasa Inggeris">Bahasa Inggeris</option>
+                        <option value="Lain-lain">Lain-lain</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Rumusan</label>
+                      <textarea 
+                        rows={3}
+                        value={editingLog.summary || ''} 
+                        onChange={e => setEditingLog({...editingLog, summary: e.target.value})}
+                        className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Pengajaran</label>
+                      <textarea 
+                        rows={2}
+                        value={editingLog.lesson || ''} 
+                        onChange={e => setEditingLog({...editingLog, lesson: e.target.value})}
+                        className="w-full p-2.5 font-medium text-sm border-2 border-slate-200 rounded-xl focus:border-amber-400 outline-none" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 p-5 border-t border-slate-100 bg-slate-50 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setEditingLog(null)}
+                  className="px-6 py-2.5 font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl transition-colors shadow-sm"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pengesahan Padam */}
+      {deleteLogId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl max-w-sm w-full p-6 text-center">
+            <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Padam Rekod?</h3>
+            <p className="text-slate-500 mb-6 font-medium">
+              Adakah anda pasti mahu memadam rekod ini secara kekal? Tindakan ini tidak boleh dibatalkan.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setDeleteLogId(null)}
+                className="px-5 py-2.5 font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors flex-1"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDeleteLog}
+                className="px-5 py-2.5 font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors shadow-sm flex-1"
+              >
+                Padam
+              </button>
             </div>
           </div>
         </div>
