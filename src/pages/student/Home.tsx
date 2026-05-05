@@ -24,6 +24,21 @@ export function Home() {
             SELAMAT DATANG KE <br />
             <span className="text-4xl md:text-6xl inline-block mt-4 text-slate-800">PERPUSTAKAAN DIGITAL PINTAR SKAUK</span>
           </h1>
+
+          <div className="flex justify-center items-center gap-6 mt-8 mb-2">
+            <img 
+              src="https://i.postimg.cc/x1yzrs3k/IMG-20220901-WA0001(1).jpg" 
+              alt="Logo SK AUK" 
+              className="h-24 md:h-32 object-contain rounded-2xl shadow-md border-4 border-white bg-white"
+              referrerPolicy="no-referrer"
+            />
+            <img 
+              src="https://i.postimg.cc/bYsF95Q0/IMG-20220901-WA0002(1).jpg" 
+              alt="Logo TS25" 
+              className="h-24 md:h-32 object-contain rounded-2xl shadow-md border-4 border-white bg-white"
+              referrerPolicy="no-referrer"
+            />
+          </div>
           
           <p className="text-xl md:text-2xl text-slate-600 font-medium max-w-2xl mx-auto flex items-center justify-center gap-3">
             <Sparkles className="text-yellow-400 w-6 h-6" />
