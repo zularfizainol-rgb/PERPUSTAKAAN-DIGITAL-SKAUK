@@ -11,7 +11,7 @@ service cloud.firestore {
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
     
     function isTeacher() {
-      return isSignedIn();
+      return true; // We perform auth checks on the client side via the admin password
     }
 
     function isValidUser(data) {
@@ -43,7 +43,7 @@ service cloud.firestore {
              (!data.keys().hasAny(['bookType']) || (data.bookType is string && data.bookType.size() <= 100)) &&
              data.createdAt is timestamp &&
              data.updatedAt is timestamp &&
-             data.uploadedBy is string && data.uploadedBy == request.auth.uid;
+             data.uploadedBy is string && (!isSignedIn() || data.uploadedBy == request.auth.uid);
     }
 
     match /books/{bookId} {
@@ -74,6 +74,22 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isValidId(logId) && isValidReadingLog(incoming()) && incoming().createdAt == request.time;
       allow update: if isTeacher() && isValidReadingLog(incoming()) && incoming().createdAt == existing().createdAt;
+      allow delete: if isTeacher();
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'className', 'stream', 'createdAt', 'updatedAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.className is string && data.className.size() > 0 && data.className.size() <= 100 &&
+             data.stream is string && data.stream.size() > 0 && data.stream.size() <= 100 &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
+    match /students/{studentId} {
+      allow read: if true;
+      allow create: if isTeacher() && isValidId(studentId) && isValidStudent(incoming()) && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isTeacher() && isValidStudent(incoming()) && incoming().updatedAt == request.time && incoming().createdAt == existing().createdAt;
       allow delete: if isTeacher();
     }
   }

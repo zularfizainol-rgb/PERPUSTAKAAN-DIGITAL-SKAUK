@@ -14,6 +14,7 @@ import { AdminDashboard } from './pages/admin/Dashboard';
 import { UploadBook } from './pages/admin/UploadBook';
 import { ManageBooks } from './pages/admin/ManageBooks';
 import { EditBook } from './pages/admin/EditBook';
+import { ManageStudents } from './pages/admin/ManageStudents';
 import { ReadBook } from './pages/student/Read';
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/enilam" element={<ENilamRecord />} />
             <Route path="/ranking" element={<Ranking />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/students" element={<ManageStudents />} />
             <Route path="/admin/upload" element={<UploadBook />} />
             <Route path="/admin/manage" element={<ManageBooks />} />
             <Route path="/admin/manage/edit/:bookId" element={<EditBook />} />

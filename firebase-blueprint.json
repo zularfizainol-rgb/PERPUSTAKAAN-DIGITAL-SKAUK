@@ -53,6 +53,19 @@
         "createdAt": { "type": "string" }
       },
       "required": ["studentName", "studentClass", "studentStream", "bookTitle", "language", "source", "dateRead", "createdAt"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "A student in the school",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "className": { "type": "string" },
+        "stream": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "className", "stream", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -67,6 +80,10 @@
     "/logs/{logId}": {
       "schema": { "$ref": "#/entities/ReadingLog" },
       "description": "Stores reading logs."
+    },
+    "/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Stores list of students."
     }
   }
 }

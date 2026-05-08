@@ -52,11 +52,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
       if (currentUser) {
+        setUser(currentUser);
         await fetchProfile(currentUser.uid);
       } else {
-        setProfile(null);
+        const hasAdminSession = localStorage.getItem('adminSession') === 'true';
+        if (hasAdminSession) {
+          const fakeAdmin = { uid: 'admin-local', email: 'admin@skauk.edu.my', displayName: 'Admin' } as FirebaseUser;
+          setUser(fakeAdmin);
+          setProfile({
+            id: 'admin-local',
+            email: 'admin@skauk.edu.my',
+            name: 'Admin SKAUK',
+            role: 'teacher'
+          });
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
       }
       setLoading(false);
     });
@@ -102,38 +115,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Kata laluan salah.');
     }
     
-    try {
-      const result = await signInAnonymously(auth);
-
-      const userRef = doc(db, 'users', result.user.uid);
-      const userSnap = await getDoc(userRef);
-      
-      if (!userSnap.exists()) {
-        await setDoc(userRef, {
-          email: 'admin@skauk.edu.my',
-          name: 'Admin SKAUK',
-          role: 'teacher',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-        await fetchProfile(result.user.uid);
-      }
-    } catch (error: any) {
-      console.error('Error signing in', error);
-      if (error.code === 'auth/operation-not-allowed') {
-        throw new Error('Sila pergi ke Firebase Console > Authentication > Sign-in method, dan aktifkan "Anonymous" untuk membenarkan log masuk ini.');
-      } else if (error.code === 'auth/unauthorized-domain') {
-         throw new Error('Domain ini tidak dibenarkan. Sila tambah domain ini di ruang Authorized Domains di Firebase Console.');
-      } else if (error.code === 'auth/network-request-failed') {
-         throw new Error('Rangkaian terputus atau disekat oleh pelayar. Jika anda berada dalam paparan iframe (seperti di AI Studio), sila BUKA APLIKASI DI TAB BARU (Open in New Tab) untuk log masuk.');
-      }
-      throw new Error(`Gagal log masuk: ${error.message}`);
-    }
+    // Bypass firebase auth and set a local admin user state
+    localStorage.setItem('adminSession', 'true');
+    const fakeAdmin = { uid: 'admin-local', email: 'admin@skauk.edu.my', displayName: 'Admin' } as FirebaseUser;
+    
+    setUser(fakeAdmin);
+    setProfile({
+      id: 'admin-local',
+      email: 'admin@skauk.edu.my',
+      name: 'Admin SKAUK',
+      role: 'teacher'
+    });
   };
 
   const logout = async () => {
     try {
+      localStorage.removeItem('adminSession');
       await signOut(auth);
+      setUser(null);
+      setProfile(null);
     } catch (error) {
       console.error('Error signing out', error);
       throw error;

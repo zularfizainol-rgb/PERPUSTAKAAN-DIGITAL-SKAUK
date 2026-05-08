@@ -4,7 +4,7 @@ let aiInstance: GoogleGenAI | null = null;
 
 function getAI() {
   if (!aiInstance) {
-    const key = process.env.GEMINI_API_KEY || import.meta.env?.VITE_GEMINI_API_KEY;
+    const key = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
     if (!key) {
       console.warn("GEMINI_API_KEY is not defined. AI categorization will not work.");
     }

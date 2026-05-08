@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth-context';
-import { LogOut, BookOpen, Library, LineChart, Edit3, ShieldAlert, FileText, Trophy, PlusCircle, Sparkles, Settings, Key, X } from 'lucide-react';
+import { LogOut, BookOpen, Library, LineChart, Edit3, ShieldAlert, FileText, Trophy, PlusCircle, Sparkles, Settings, Key, X, Users } from 'lucide-react';
 
 export function Layout() {
   const { user, profile, loading, logout, signInWithGoogle, signInWithPassword } = useAuth();
@@ -158,6 +158,7 @@ export function Layout() {
               <NavLink to="/admin" icon={<LineChart />} text="Dashboard Analisis" current={location.pathname === '/admin'} colorClass="text-purple-500" bgClass="bg-purple-50" activeBg="bg-purple-500" activeShadow="shadow-purple-500/30" />
               {user && (
                 <>
+                  <NavLink to="/admin/students" icon={<Users className="w-5 h-5" />} text="Pengurusan Murid" current={location.pathname === '/admin/students'} colorClass="text-blue-500" bgClass="bg-blue-50" activeBg="bg-blue-500" activeShadow="shadow-blue-500/30" />
                   <NavLink to="/admin/upload" icon={<PlusCircle />} text="Tambah Buku" current={location.pathname === '/admin/upload'} colorClass="text-pink-500" bgClass="bg-pink-50" activeBg="bg-pink-500" activeShadow="shadow-pink-500/30" />
                   <NavLink to="/admin/manage" icon={<Settings />} text="Selenggara Buku" current={location.pathname === '/admin/manage'} colorClass="text-slate-500" bgClass="bg-slate-50" activeBg="bg-slate-700" activeShadow="shadow-slate-700/30" />
                 </>

@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { handleFirestoreError, OperationType } from '../../lib/firestore-error';
-import { Edit3, CheckCircle2, Sparkles } from 'lucide-react';
+import { Edit3, CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+
+interface Student {
+  id: string;
+  name: string;
+  className: string;
+  stream: string;
+}
 
 export function ENilamRecord() {
   const location = useLocation();
@@ -16,6 +23,29 @@ export function ENilamRecord() {
   const prefilledSource = location.state?.source || '';
   const prefilledLanguage = location.state?.language || '';
 
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'students'), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+      setStudents(data);
+      setLoadingStudents(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'students');
+      setLoadingStudents(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const DEFAULT_STREAMS = ['TAHUN 1', 'TAHUN 2', 'TAHUN 3', 'TAHUN 4', 'TAHUN 5', 'TAHUN 6', 'PRA-SEKOLAH'];
+  const DEFAULT_CLASSES = ['UIAM', 'UM', 'USM', 'UTM', 'UPM', 'UKM', 'UITM', 'USIM', 'UUM', 'UPSI', 'UNISZA'];
+
+  const streams = useMemo(() => {
+    const dbStreams = students.map(s => String(s.stream).toUpperCase());
+    return Array.from(new Set([...DEFAULT_STREAMS, ...dbStreams])).sort((a, b) => a.localeCompare(b));
+  }, [students]);
+  
   const [formData, setFormData] = useState({
     dateRead: format(new Date(), 'yyyy-MM-dd'),
     studentName: '',
@@ -30,6 +60,23 @@ export function ENilamRecord() {
     summary: '',
     lesson: ''
   });
+
+  const classes = useMemo(() => {
+    if (!formData.studentStream) return [];
+    const filtered = students.filter(s => String(s.stream).toUpperCase() === formData.studentStream.toUpperCase());
+    const dbClasses = filtered.map(s => String(s.className).toUpperCase());
+    
+    return Array.from(new Set<string>([...DEFAULT_CLASSES, ...dbClasses])).sort((a, b) => a.localeCompare(b));
+  }, [students, formData.studentStream]);
+
+  const studentNames = useMemo(() => {
+    if (!formData.studentStream || !formData.studentClass) return [];
+    return students.filter(s => 
+      String(s.stream).toUpperCase() === formData.studentStream.toUpperCase() && 
+      String(s.className).toUpperCase() === formData.studentClass.toUpperCase()
+    ).map(s => String(s.name).toUpperCase())
+     .sort((a, b) => a.localeCompare(b));
+  }, [students, formData.studentStream, formData.studentClass]);
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -88,7 +135,18 @@ export function ENilamRecord() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const updates: any = { [name]: value };
+      if (name === 'studentStream') {
+        updates.studentClass = '';
+        updates.studentName = '';
+      }
+      if (name === 'studentClass') {
+        updates.studentName = '';
+      }
+      return { ...prev, ...updates };
+    });
   };
 
   if (success) {
@@ -134,40 +192,36 @@ export function ENilamRecord() {
               <label className="block text-sm font-bold text-slate-700 mb-2">Tarikh Bacaan</label>
               <input type="date" name="dateRead" required value={formData.dateRead} onChange={handleChange} className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
             </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Nama Penuh</label>
-              <input type="text" name="studentName" required value={formData.studentName} onChange={handleChange} placeholder="Ali bin Abu" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Tahun / Aliran</label>
                 <select name="studentStream" required value={formData.studentStream} onChange={handleChange} className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none bg-white">
                   <option value="">Pilih Tahun...</option>
-                  <option value="Tahun 1">Tahun 1</option>
-                  <option value="Tahun 2">Tahun 2</option>
-                  <option value="Tahun 3">Tahun 3</option>
-                  <option value="Tahun 4">Tahun 4</option>
-                  <option value="Tahun 5">Tahun 5</option>
-                  <option value="Tahun 6">Tahun 6</option>
+                  {streams.map(str => <option key={str} value={str}>{str}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Nama Kelas</label>
-                <select name="studentClass" required value={formData.studentClass} onChange={handleChange} className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none bg-white">
-                  <option value="">Pilih Kelas...</option>
-                  <option value="UIAM">UIAM</option>
-                  <option value="UM">UM</option>
-                  <option value="USM">USM</option>
-                  <option value="UTM">UTM</option>
-                  <option value="UPM">UPM</option>
-                  <option value="UKM">UKM</option>
-                  <option value="UITM">UITM</option>
-                  <option value="USIM">USIM</option>
-                  <option value="UUM">UUM</option>
-                  <option value="UPSI">UPSI</option>
-                  <option value="UNISZA">UNISZA</option>
-                </select>
+                {classes.length > 0 ? (
+                  <select name="studentClass" required value={formData.studentClass} onChange={handleChange} disabled={!formData.studentStream} className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none bg-white disabled:opacity-50 disabled:bg-slate-50">
+                    <option value="">Pilih Kelas...</option>
+                    {classes.map(cls => <option key={cls} value={cls}>{cls}</option>)}
+                  </select>
+                ) : (
+                  <input type="text" name="studentClass" required value={formData.studentClass} onChange={handleChange} disabled={!formData.studentStream} placeholder="Masukkan kelas (cth: 1 UM)" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none disabled:opacity-50 disabled:bg-slate-50" />
+                )}
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Nama Penuh</label>
+              {studentNames.length > 0 ? (
+                <select name="studentName" required value={formData.studentName} onChange={handleChange} disabled={!formData.studentClass} className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none bg-white disabled:opacity-50 disabled:bg-slate-50">
+                  <option value="">Pilih Nama...</option>
+                  {studentNames.map(name => <option key={name} value={name}>{name}</option>)}
+                </select>
+              ) : (
+                <input type="text" name="studentName" required value={formData.studentName} onChange={handleChange} placeholder="Sila pilih aliran dan kelas terlebih dahulu atau masukkan nama" className="w-full p-3 font-medium border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all outline-none" />
+              )}
             </div>
           </div>
         </div>
