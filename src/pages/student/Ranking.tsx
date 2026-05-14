@@ -91,8 +91,8 @@ export function Ranking() {
     .sort((a, b) => b.total - a.total)
     .slice(0, 10);
 
-  const streamsOptions = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6'];
-  const classesOptions = ['UIAM', 'UM', 'USM', 'UTM', 'UPM', 'UKM', 'UITM', 'USIM', 'UUM', 'UPSI', 'UNISZA'];
+  const streamsOptions = Array.from(new Set(logs.map(l => l.studentStream).filter(Boolean))).sort();
+  const classesOptions = Array.from(new Set(logs.map(l => l.studentClass).filter(Boolean))).sort();
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">

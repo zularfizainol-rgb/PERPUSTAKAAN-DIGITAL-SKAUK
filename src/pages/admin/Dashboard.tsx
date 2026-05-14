@@ -175,9 +175,8 @@ export function AdminDashboard() {
     .map(k => ({ name: k, total: studentDataMap[k].total, className: studentDataMap[k].className }))
     .sort((a, b) => b.total - a.total);
 
-  const streamsOptions = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6'];
-  const classesOptions = ['UIAM', 'UM', 'USM', 'UTM', 'UPM', 'UKM', 'UITM', 'USIM', 'UUM', 'UPSI', 'UNISZA'];
-
+  const streamsOptions = Array.from(new Set(logs.map(l => l.studentStream).filter(Boolean))).sort();
+  const classesOptions = Array.from(new Set(logs.map(l => l.studentClass).filter(Boolean))).sort();
 
   const maxStudent = allStudents.length > 0 ? allStudents[0].total : 1;
   const maxClass = classData.length > 0 ? classData[0].Nilai : 1;
@@ -210,57 +209,6 @@ export function AdminDashboard() {
     } catch (error) {
       console.error("Gagal memadam data:", error);
       handleFirestoreError(error, OperationType.DELETE, 'logs/books');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const generateMockData = async () => {
-    setIsGenerating(true);
-    const mockNames = ['Ahmad', 'Ali', 'Abu', 'Siti', 'Aminah', 'Aisyah', 'Muthu', 'Raju', 'Ah Chong', 'Mei Ling'];
-    const mockClasses = ['UIAM', 'UM', 'USM', 'UTM', 'UPM', 'UKM', 'UITM', 'USIM', 'UUM', 'UPSI', 'UNISZA'];
-    const mockStreams = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6'];
-    const mockBooks = ['Buku Cerita Haiwan', 'Sejarah Melaka', 'Sains Angkasa', 'Koleksi Pantun', 'Kembara Hutan', 'Ensiklopedia Dinosaur'];
-    const mockAuthors = ['Siti Ruzaini', 'Ahmad Kamal', 'Lee Wai', 'John Doe', 'Tiada Data'];
-    const mockPublishers = ['DBP', 'Penerbitan Pelangi', 'Oxford', 'Gramedia'];
-    const mockLangs = ['Bahasa Melayu', 'Bahasa Inggeris', 'Lain-lain'];
-    const mockSources = ['Buku', 'Buku Digital', 'Artikel', 'Jurnal'];
-    
-    try {
-      for (let i = 0; i < 20; i++) {
-        const randomName = mockNames[Math.floor(Math.random() * mockNames.length)];
-        const randomClass = mockClasses[Math.floor(Math.random() * mockClasses.length)];
-        const randomStream = mockStreams[Math.floor(Math.random() * mockStreams.length)];
-        const randomBook = mockBooks[Math.floor(Math.random() * mockBooks.length)];
-        const randomAuthor = mockAuthors[Math.floor(Math.random() * mockAuthors.length)];
-        const randomPublisher = mockPublishers[Math.floor(Math.random() * mockPublishers.length)];
-        const randomPages = (Math.floor(Math.random() * 200) + 10).toString();
-        const randomLang = mockLangs[Math.floor(Math.random() * mockLangs.length)];
-        const randomSource = mockSources[Math.floor(Math.random() * mockSources.length)];
-        
-        const randomDate = new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 365 * 3));
-        const dateReadStr = randomDate.toISOString().split('T')[0];
-        
-        await addDoc(collection(db, 'logs'), {
-          studentName: randomName,
-          studentClass: randomClass,
-          studentStream: randomStream,
-          bookTitle: randomBook,
-          author: randomAuthor,
-          publisher: randomPublisher,
-          pages: randomPages,
-          language: randomLang,
-          source: randomSource,
-          summary: 'Ini adalah rumusan ringkas untuk buku ini.',
-          lesson: 'Saya banyak belajar dari buku ini.',
-          dateRead: dateReadStr,
-          createdAt: serverTimestamp()
-        });
-      }
-      // Successfully generated mock data
-    } catch (error) {
-      console.error(error);
-      handleFirestoreError(error, OperationType.CREATE, 'logs');
     } finally {
       setIsGenerating(false);
     }
@@ -343,18 +291,6 @@ export function AdminDashboard() {
             <p className="text-purple-100 font-medium text-lg">Pantau pencapaian cemerlang murid-murid kita!</p>
           </div>
           <div className="flex gap-3">
-            <button 
-              onClick={generateMockData}
-              disabled={isGenerating}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-xl transition-all w-max font-bold border border-white/30 text-sm disabled:opacity-50"
-            >
-              {isGenerating ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-              ) : (
-                <Sparkles className="w-4 h-4" />
-              )}
-              {isGenerating ? 'Menjana...' : 'Jana Data Mock'}
-            </button>
             {!showConfirmClear ? (
               <button 
                 onClick={() => setShowConfirmClear(true)}
