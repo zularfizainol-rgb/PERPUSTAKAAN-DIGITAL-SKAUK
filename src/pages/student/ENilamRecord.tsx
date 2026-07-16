@@ -24,28 +24,11 @@ export function ENilamRecord() {
   const prefilledLanguage = location.state?.language || '';
 
   const [students, setStudents] = useState<Student[]>([]);
-  const [loadingStudents, setLoadingStudents] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'students'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
-      setStudents(data);
-      setLoadingStudents(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'students');
-      setLoadingStudents(false);
-    });
-    return () => unsubscribe();
-  }, []);
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   const DEFAULT_STREAMS = ['TAHUN 1', 'TAHUN 2', 'TAHUN 3', 'TAHUN 4', 'TAHUN 5', 'TAHUN 6', 'PRA-SEKOLAH'];
   const DEFAULT_CLASSES = ['UIAM', 'UM', 'USM', 'UTM', 'UPM', 'UKM', 'UITM', 'USIM', 'UUM', 'UPSI', 'UNISZA'];
 
-  const streams = useMemo(() => {
-    const dbStreams = students.map(s => String(s.stream).toUpperCase());
-    return Array.from(new Set([...DEFAULT_STREAMS, ...dbStreams])).sort((a, b) => a.localeCompare(b));
-  }, [students]);
-  
   const [formData, setFormData] = useState({
     dateRead: format(new Date(), 'yyyy-MM-dd'),
     studentName: '',
@@ -61,22 +44,37 @@ export function ENilamRecord() {
     lesson: ''
   });
 
-  const classes = useMemo(() => {
-    if (!formData.studentStream) return [];
-    const filtered = students.filter(s => String(s.stream).toUpperCase() === formData.studentStream.toUpperCase());
-    const dbClasses = filtered.map(s => String(s.className).toUpperCase());
+  useEffect(() => {
+    if (!formData.studentStream || !formData.studentClass) {
+      setStudents([]);
+      return;
+    }
     
-    return Array.from(new Set<string>([...DEFAULT_CLASSES, ...dbClasses])).sort((a, b) => a.localeCompare(b));
-  }, [students, formData.studentStream]);
+    setLoadingStudents(true);
+    const q = query(
+      collection(db, 'students'), 
+      where('stream', '==', formData.studentStream),
+      where('className', '==', formData.studentClass)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Student));
+      setStudents(data);
+      setLoadingStudents(false);
+    }, (error) => {
+      console.error(error);
+      setLoadingStudents(false);
+    });
+    
+    return () => unsubscribe();
+  }, [formData.studentStream, formData.studentClass]);
+
+  const streams = DEFAULT_STREAMS;
+  const classes = DEFAULT_CLASSES;
 
   const studentNames = useMemo(() => {
-    if (!formData.studentStream || !formData.studentClass) return [];
-    return students.filter(s => 
-      String(s.stream).toUpperCase() === formData.studentStream.toUpperCase() && 
-      String(s.className).toUpperCase() === formData.studentClass.toUpperCase()
-    ).map(s => String(s.name).toUpperCase())
-     .sort((a, b) => a.localeCompare(b));
-  }, [students, formData.studentStream, formData.studentClass]);
+    return students.map(s => String(s.name).toUpperCase()).sort((a, b) => a.localeCompare(b));
+  }, [students]);
 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);

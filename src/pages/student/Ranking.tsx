@@ -278,17 +278,28 @@ export function Ranking() {
                     </div>
                     
                     {/* Bintang Pembaca */}
-                    <div className="bg-white p-3 rounded-xl border border-amber-100/50 flex flex-wrap gap-1 mt-2">
-                      {Array.from({ length: Math.min(student.total, 50) }).map((_, idx) => (
-                        <div key={idx} className="relative group">
-                          <Star className="w-5 h-5 text-yellow-400 fill-yellow-400 drop-shadow-sm transform hover:scale-125 transition-transform" />
-                        </div>
-                      ))}
-                      {student.total > 50 && (
-                        <div className="flex items-center justify-center bg-yellow-100 text-amber-600 font-bold px-2 py-0.5 rounded-md text-xs ms-1">
-                          +{student.total - 50} lagi
-                        </div>
-                      )}
+                    <div className="bg-white p-3 rounded-xl border border-amber-100/50 flex flex-col gap-2 mt-2">
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pengiktirafan Bintang NILAM KPM</div>
+                      <div className="flex flex-wrap gap-1">
+                        {(() => {
+                          let stars = 0;
+                          if (student.total >= 720) stars = 5;
+                          else if (student.total >= 576) stars = 4;
+                          else if (student.total >= 432) stars = 3;
+                          else if (student.total >= 288) stars = 2;
+                          else if (student.total >= 144) stars = 1;
+                          
+                          if (stars === 0) {
+                            return <span className="text-sm text-slate-400 font-medium italic">Belum mencapai tahap 1 Bintang (144 bahan bacaan)</span>;
+                          }
+
+                          return Array.from({ length: stars }).map((_, idx) => (
+                            <div key={idx} className="relative group" title={`${stars} Bintang`}>
+                              <Star className="w-6 h-6 text-yellow-400 fill-yellow-400 drop-shadow-sm transform hover:scale-110 transition-transform" />
+                            </div>
+                          ));
+                        })()}
+                      </div>
                     </div>
                   </div>
                 ))
